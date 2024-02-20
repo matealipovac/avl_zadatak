@@ -1,0 +1,14 @@
+replicaCount: 2
+
+image:
+  repository: matealipovac/image2
+  tag: v1.0.0
+
+container:
+  name: service1
+
+service:
+  name: service2-chart
+  type: LoadBalancer
+  port: 80
+  targetPort: 8081
