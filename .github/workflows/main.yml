@@ -1,0 +1,49 @@
+name: Microservices Pipeline
+
+on:
+  push:
+    branches:
+      - main  # Update with your main branch name
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10.9'  # Update with the desired Python version
+
+    - name: Install dependencies
+      run: pip install -r service1/requirements.txt && pip install -r service2/requirements.txt
+
+    - name: Unit Tests
+      run: |
+        cd service1
+        python -m unittest test_service1.py
+        cd ../service2
+        python -m unittest test_service2.py
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+      with:
+        images: matealipovac/bookish-umbrella
+
+    - name: Build and push Docker image
+      run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/image1:v1.0.0 ./service1
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/image2:v1.0.0 ./service2
+          echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/image1:v1.0.0
+          docker push ${{ secrets.DOCKER_USERNAME }}/image2:v1.0.0
